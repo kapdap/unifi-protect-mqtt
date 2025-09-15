@@ -59,7 +59,6 @@ func main() {
 		// Cleanup ProtectClient when MQTT disconnects
 		if protectClient != nil {
 			protectClient.Cleanup()
-			protectClient = nil
 		}
 	}
 
