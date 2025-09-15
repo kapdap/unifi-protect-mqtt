@@ -1,0 +1,9 @@
+services:
+  unifi-protect-mqtt:
+    image: ghcr.io/kapdap/unifi-protect-mqtt:latest
+    build: .
+    environment:
+      - MQTT_HOST=mosquitto
+      - PROTECT_HOST=unifi-protect
+      - PROTECT_API_KEY=your-api-key
+    restart: unless-stopped
