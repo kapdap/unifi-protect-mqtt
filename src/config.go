@@ -69,7 +69,7 @@ var (
 		{Key: "PROTECT_PORT", Description: "Protect host port", Default: "443", IsFile: false},
 		{Key: "PROTECT_API_PATH", Description: "Protect API path", Default: "proxy/protect/integration/v1", IsFile: false},
 		{Key: "PROTECT_TLS", Description: "Connect using TLS protocol", Default: "true", IsFile: false},
-		{Key: "PROTECT_TLS_INSECURE", Description: "Verify TLS certificates", Default: "true", IsFile: false},
+		{Key: "PROTECT_TLS_VERIFY", Description: "Verify TLS certificates", Default: "false", IsFile: false},
 	}
 )
 
@@ -89,6 +89,33 @@ func InitializeConfig() {
 	flag.Parse()
 }
 
+// ConfigureLogging sets up slog with the configured log level
+func ConfigureLogging() {
+	logLevel := getConfigValue("LOG_LEVEL")
+
+	var level slog.Level
+	switch strings.ToUpper(logLevel) {
+	case "DEBUG":
+		level = slog.LevelDebug
+	case "INFO":
+		level = slog.LevelInfo
+	case "WARN", "WARNING":
+		level = slog.LevelWarn
+	case "ERROR":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+		slog.Warn("Unknown log level, defaulting to INFO", "level", logLevel)
+	}
+
+	// Create a new logger with the specified level
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	})
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
+}
+
 // LoadMQTTConfig loads and returns MQTT configuration
 func LoadMQTTConfig() *MQTTConfig {
 	brokerHost := getConfigValue("MQTT_HOST")
@@ -103,20 +130,9 @@ func LoadMQTTConfig() *MQTTConfig {
 
 	clientID := getConfigValue("MQTT_CLIENT_ID")
 	topicPrefix := getConfigValue("MQTT_TOPIC_PREFIX")
-	qosStr := getConfigValue("MQTT_QOS")
-	tlsStr := getConfigValue("MQTT_TLS")
 
-	qos, err := strconv.Atoi(qosStr)
-	if err != nil {
-		log.Printf("Invalid MQTT_QOS value, using default 0: %v", err)
-		qos = 0
-	}
-
-	tlsEnabled, err := strconv.ParseBool(tlsStr)
-	if err != nil {
-		log.Printf("Invalid MQTT_TLS value, using default false: %v", err)
-		tlsEnabled = false
-	}
+	qos := parseConfigValue("MQTT_QOS", strconv.Atoi)
+	tlsEnabled := parseConfigValue("MQTT_TLS", strconv.ParseBool)
 
 	return &MQTTConfig{
 		Host:        brokerHost,
@@ -144,20 +160,11 @@ func LoadProtectConfig() *ProtectConfig {
 	hostName := getConfigValue("PROTECT_HOST")
 	hostPort := getConfigValue("PROTECT_PORT")
 	apiPath := getConfigValue("PROTECT_API_PATH")
-	tlsStr := getConfigValue("PROTECT_TLS")
 
-	tlsEnabled, err := strconv.ParseBool(tlsStr)
-	if err != nil {
-		log.Printf("Invalid PROTECT_TLS value, using default true: %v", err)
-		tlsEnabled = true
-	}
+	tlsEnabled := parseConfigValue("PROTECT_TLS", strconv.ParseBool)
+	tlsVerify := parseConfigValue("PROTECT_TLS_VERIFY", strconv.ParseBool)
 
-	tlsInsecure := getConfigValue("PROTECT_TLS_INSECURE")
-
-	var tlsConfig *tls.Config
-	if tlsInsecure == "true" {
-		tlsConfig = &tls.Config{InsecureSkipVerify: true}
-	}
+	tlsConfig := &tls.Config{InsecureSkipVerify: !tlsVerify}
 
 	return &ProtectConfig{
 		APIKey:     apiKey,
@@ -167,6 +174,18 @@ func LoadProtectConfig() *ProtectConfig {
 		TLSEnabled: tlsEnabled,
 		TLSConfig:  tlsConfig,
 	}
+}
+
+// parseConfigValue parses a configuration value with fallback to default on error
+func parseConfigValue[T any](configKey string, parser func(string) (T, error)) T {
+	value := getConfigValue(configKey)
+	result, err := parser(value)
+	if err != nil {
+		defaultValue := getConfigField(configKey).Default
+		log.Printf("Invalid %s value, using default %s: %v", configKey, defaultValue, err)
+		result, _ = parser(defaultValue)
+	}
+	return result
 }
 
 // getConfigField finds a ConfigField by its key
@@ -221,31 +240,4 @@ func readFileValue(filePath string) (string, error) {
 	}
 
 	return strings.TrimSpace(string(data)), nil
-}
-
-// ConfigureLogging sets up slog with the configured log level
-func ConfigureLogging() {
-	logLevel := getConfigValue("LOG_LEVEL")
-
-	var level slog.Level
-	switch strings.ToUpper(logLevel) {
-	case "DEBUG":
-		level = slog.LevelDebug
-	case "INFO":
-		level = slog.LevelInfo
-	case "WARN", "WARNING":
-		level = slog.LevelWarn
-	case "ERROR":
-		level = slog.LevelError
-	default:
-		level = slog.LevelInfo
-		slog.Warn("Unknown log level, defaulting to INFO", "level", logLevel)
-	}
-
-	// Create a new logger with the specified level
-	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: level,
-	})
-	logger := slog.New(handler)
-	slog.SetDefault(logger)
 }

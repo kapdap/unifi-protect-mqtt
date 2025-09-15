@@ -37,7 +37,7 @@ Use the following variables to configure the application (see `.env.example` for
 -   `PROTECT_API_KEY_FILE`: Path to file containing the API key (optional)
 -   `PROTECT_API_PATH`: API path (default: `proxy/protect/integration/v1`)
 -   `PROTECT_TLS`: Set to "false" to disable TLS for UniFi Protect connection (default: `true`)
--   `PROTECT_TLS_INSECURE`: Set to "false" to enable TLS certificate verification (default: `true`)
+-   `PROTECT_TLS_VERIFY`: Set to "true" to enable TLS certificate verification (default: `false`)
 
 ### MQTT Broker Settings
 
@@ -45,11 +45,11 @@ Use the following variables to configure the application (see `.env.example` for
 -   `MQTT_PORT`: MQTT broker port (default: `1883`)
 -   `MQTT_USERNAME`: MQTT username (optional)
 -   `MQTT_PASSWORD`: MQTT password (optional)
--   `MQTT_PASSWORD_FILE`: Path to a file containing the MQTT password (optional)
+-   `MQTT_PASSWORD_FILE`: Path to file containing the MQTT password (optional)
 -   `MQTT_CLIENT_ID`: MQTT client identifier (default: `unifi-protect-mqtt`)
 -   `MQTT_TOPIC_PREFIX`: Prefix for MQTT topics (default: `unifi/protect`)
 -   `MQTT_QOS`: MQTT Quality of Service level (default: `0`)
--   `MQTT_TLS`: Whether to use TLS for MQTT connection (default: `false`)
+-   `MQTT_TLS`: Set to "true" to enable TLS for MQTT connection (default: `false`)
 
 ## MQTT Topics
 
