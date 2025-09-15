@@ -19,11 +19,11 @@ const (
 )
 
 func main() {
-	slog.Info("Starting Unifi Protect MQTT")
-
 	// Initialize configuration and logging
 	InitializeConfig()
 	ConfigureLogging()
+
+	slog.Info("Starting Unifi Protect MQTT")
 
 	// Load MQTT and Protect configuration
 	mqttConfig := LoadMQTTConfig()

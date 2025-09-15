@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"os"
 	"strconv"
@@ -154,7 +153,8 @@ func LoadProtectConfig() *ProtectConfig {
 		apiKey = getConfigValue("PROTECT_API_KEY_FILE")
 	}
 	if apiKey == "" {
-		log.Fatal("PROTECT_API_KEY or PROTECT_API_KEY_FILE is required")
+		slog.Error("PROTECT_API_KEY or PROTECT_API_KEY_FILE is required")
+		os.Exit(1)
 	}
 
 	hostName := getConfigValue("PROTECT_HOST")
@@ -182,7 +182,7 @@ func parseConfigValue[T any](configKey string, parser func(string) (T, error)) T
 	result, err := parser(value)
 	if err != nil {
 		defaultValue := getConfigField(configKey).Default
-		log.Printf("Invalid %s value, using default %s: %v", configKey, defaultValue, err)
+		slog.Warn("Invalid config value, using default", "key", configKey, "default", defaultValue, "error", err)
 		result, _ = parser(defaultValue)
 	}
 	return result
@@ -218,7 +218,8 @@ func getConfigValue(key string) string {
 	if field.IsFile && value != "" {
 		fileValue, err := readFileValue(value)
 		if err != nil {
-			log.Fatalf("Failed to read value from file %s: %v", value, err)
+			slog.Error("Failed to read value from file", "file", value, "error", err)
+			os.Exit(1)
 		}
 		if fileValue != "" {
 			return fileValue
