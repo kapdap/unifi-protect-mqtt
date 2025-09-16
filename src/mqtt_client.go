@@ -69,7 +69,7 @@ func (m *MQTTClient) Connect(onConnect func(), onDisconnect func()) error {
 
 // Subscribe subscribes to an MQTT topic with a message handler
 func (m *MQTTClient) Subscribe(topic string, handler mqtt.MessageHandler) error {
-	fullTopic := fmt.Sprintf("%s/%s", m.config.TopicPrefix, topic)
+	fullTopic := fmt.Sprintf("%s/%s", m.config.Topic, topic)
 	token := m.client.Subscribe(fullTopic, m.config.QoS, handler)
 	if token.Wait() && token.Error() != nil {
 		return fmt.Errorf("failed to subscribe to MQTT topic %s: %v", fullTopic, token.Error())
@@ -80,7 +80,7 @@ func (m *MQTTClient) Subscribe(topic string, handler mqtt.MessageHandler) error 
 
 // Publish sends a message to the specified MQTT topic
 func (m *MQTTClient) Publish(topic string, message []byte, retain bool) error {
-	fullTopic := fmt.Sprintf("%s/%s", m.config.TopicPrefix, topic)
+	fullTopic := fmt.Sprintf("%s/%s", m.config.Topic, topic)
 	token := m.client.Publish(fullTopic, m.config.QoS, retain, message)
 	if token.Wait() && token.Error() != nil {
 		return fmt.Errorf("failed to publish to MQTT topic %s: %v", fullTopic, token.Error())

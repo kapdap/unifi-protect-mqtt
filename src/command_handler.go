@@ -40,6 +40,7 @@ func NewCommandHandler(protectClient *ProtectClient, mqttClient *MQTTClient) *Co
 	return h
 }
 
+// SubscribeCommands subscribes to the command topic
 func (h *CommandHandler) SubscribeCommands() {
 	h.mqttClient.Subscribe("commands/#", h.HandleCommand)
 }
@@ -133,7 +134,7 @@ func (h *CommandHandler) HandleCommand(client mqtt.Client, msg mqtt.Message) {
 	slog.Info("Received command", "topic", topic)
 
 	// Extract the command from the topic (remove "commands/" prefix)
-	prefix := fmt.Sprintf("%s/%s/", h.mqttClient.config.TopicPrefix, "commands")
+	prefix := fmt.Sprintf("%s/%s/", h.mqttClient.config.Topic, "commands")
 	command := strings.TrimPrefix(topic, prefix)
 
 	if command == "" {

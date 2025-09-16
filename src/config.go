@@ -23,14 +23,14 @@ type ConfigField struct {
 
 // MQTTConfig holds MQTT broker configuration
 type MQTTConfig struct {
-	Host        string
-	Port        string
-	Username    string
-	Password    string
-	ClientID    string
-	TopicPrefix string
-	QoS         byte
-	TLS         bool
+	Host     string
+	Port     string
+	Username string
+	Password string
+	ClientID string
+	Topic    string
+	QoS      byte
+	TLS      bool
 }
 
 // ProtectConfig holds UniFi Protect configuration
@@ -56,7 +56,7 @@ var (
 		{Key: "MQTT_PASSWORD", Description: "MQTT password", Default: "", IsFile: false},
 		{Key: "MQTT_PASSWORD_FILE", Description: "Path to file containing MQTT password", Default: "", IsFile: true},
 		{Key: "MQTT_CLIENT_ID", Description: "MQTT client ID", Default: "unifi-protect-mqtt", IsFile: false},
-		{Key: "MQTT_TOPIC_PREFIX", Description: "MQTT topic prefix", Default: "unifi/protect", IsFile: false},
+		{Key: "MQTT_TOPIC", Description: "MQTT topic prefix", Default: "unifi/protect", IsFile: false},
 		{Key: "MQTT_QOS", Description: "MQTT QoS", Default: "0", IsFile: false},
 		{Key: "MQTT_RETAIN", Description: "MQTT retain", Default: "false", IsFile: false},
 		{Key: "MQTT_TLS", Description: "MQTT TLS", Default: "false", IsFile: false},
@@ -128,20 +128,20 @@ func LoadMQTTConfig() *MQTTConfig {
 	}
 
 	clientID := getConfigValue("MQTT_CLIENT_ID")
-	topicPrefix := getConfigValue("MQTT_TOPIC_PREFIX")
+	topic := getConfigValue("MQTT_TOPIC")
 
 	qos := parseConfigValue("MQTT_QOS", strconv.Atoi)
 	tlsEnabled := parseConfigValue("MQTT_TLS", strconv.ParseBool)
 
 	return &MQTTConfig{
-		Host:        brokerHost,
-		Port:        brokerPort,
-		Username:    username,
-		Password:    password,
-		ClientID:    clientID,
-		TopicPrefix: topicPrefix,
-		QoS:         byte(qos),
-		TLS:         tlsEnabled,
+		Host:     brokerHost,
+		Port:     brokerPort,
+		Username: username,
+		Password: password,
+		ClientID: clientID,
+		Topic:    topic,
+		QoS:      byte(qos),
+		TLS:      tlsEnabled,
 	}
 }
 

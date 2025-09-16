@@ -9,9 +9,9 @@ A bridge between UniFi Protect and MQTT. Uses the official UniFi Protect API to 
 1. Create a `.env` file with your configuration or set environment variables directly:
 
 ```
+MQTT_HOST=192.168.1.100
 PROTECT_HOST=192.168.1.10
 PROTECT_API_KEY=your-api-key-here
-MQTT_HOST=192.168.1.100
 ```
 
 2. Build the application: `go build -o ./bin/unifi-protect-mqtt`
@@ -22,7 +22,7 @@ MQTT_HOST=192.168.1.100
 You can also use command-line flags to override environment variables:
 
 ```bash
-unifi-protect-mqtt -PROTECT_HOST=192.168.1.10 -PROTECT_API_KEY=your-api-key-here -MQTT_HOST=192.168.1.100
+unifi-protect-mqtt -MQTT_HOST=192.168.1.100 -PROTECT_HOST=192.168.1.10 -PROTECT_API_KEY=your-api-key-here
 ```
 
 ## Configuration
@@ -47,7 +47,7 @@ Use the following variables to configure the application (see `.env.example` for
 -   `MQTT_PASSWORD`: MQTT password (optional)
 -   `MQTT_PASSWORD_FILE`: Path to file containing the MQTT password (optional)
 -   `MQTT_CLIENT_ID`: MQTT client identifier (default: `unifi-protect-mqtt`)
--   `MQTT_TOPIC_PREFIX`: Prefix for MQTT topics (default: `unifi/protect`)
+-   `MQTT_TOPIC`: Prefix for MQTT topics (default: `unifi/protect`)
 -   `MQTT_QOS`: MQTT Quality of Service level (default: `0`)
 -   `MQTT_TLS`: Set to "true" to enable TLS for MQTT connection (default: `false`)
 
@@ -55,19 +55,19 @@ Use the following variables to configure the application (see `.env.example` for
 
 The application publishes messages to the following topics:
 
--   `{MQTT_TOPIC_PREFIX}/meta/info` - UniFi Protect system information
--   `{MQTT_TOPIC_PREFIX}/cameras/{camera_id}` - Camera metadata
--   `{MQTT_TOPIC_PREFIX}/cameras/{camera_id}/snapshot` - Camera snapshot image data
--   `{MQTT_TOPIC_PREFIX}/cameras/{camera_id}/rtsps-stream` - Camera RTSPS stream URLs
--   `{MQTT_TOPIC_PREFIX}/subscribe/devices` - Device-related messages (disconnects, status changes, etc.)
--   `{MQTT_TOPIC_PREFIX}/subscribe/events` - Event-related messages (motion, alarms, etc.)
+-   `{MQTT_TOPIC}/meta/info` - UniFi Protect system information
+-   `{MQTT_TOPIC}/cameras/{camera_id}` - Camera metadata
+-   `{MQTT_TOPIC}/cameras/{camera_id}/snapshot` - Camera snapshot image data
+-   `{MQTT_TOPIC}/cameras/{camera_id}/rtsps-stream` - Camera RTSPS stream URLs
+-   `{MQTT_TOPIC}/subscribe/devices` - Device-related messages (disconnects, status changes, etc.)
+-   `{MQTT_TOPIC}/subscribe/events` - Event-related messages (motion, alarms, etc.)
 
-Use the following command topics to retrieve data from the UniFi Protect API:
+Publish to the following command topics to retrieve data from the UniFi Protect API:
 
--   `{MQTT_TOPIC_PREFIX}/command/meta/info` - Publishes UniFi Protect system information to `{MQTT_TOPIC_PREFIX}/meta/info`
--   `{MQTT_TOPIC_PREFIX}/command/cameras` - Publishes metadata for all cameras to `{MQTT_TOPIC_PREFIX}/cameras/{camera_id}`
--   `{MQTT_TOPIC_PREFIX}/command/cameras/{camera_id}/snapshot` - Publishes a snapshot for the specified camera to `{MQTT_TOPIC_PREFIX}/cameras/{camera_id}/snapshot`
--   `{MQTT_TOPIC_PREFIX}/command/cameras/{camera_id}/rtsps-stream` - Publishes an RTSPS stream for the specified camera to `{MQTT_TOPIC_PREFIX}/cameras/{camera_id}/rtsps-stream`
+-   `{MQTT_TOPIC}/command/meta/info` - Publishes UniFi Protect system information to `{MQTT_TOPIC}/meta/info`
+-   `{MQTT_TOPIC}/command/cameras` - Publishes metadata for all cameras to `{MQTT_TOPIC}/cameras/{camera_id}`
+-   `{MQTT_TOPIC}/command/cameras/{camera_id}/snapshot` - Publishes a snapshot for the specified camera to `{MQTT_TOPIC}/cameras/{camera_id}/snapshot`
+-   `{MQTT_TOPIC}/command/cameras/{camera_id}/rtsps-stream` - Publishes an RTSPS stream for the specified camera to `{MQTT_TOPIC}/cameras/{camera_id}/rtsps-stream`
 
 ## Requirements
 
