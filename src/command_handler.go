@@ -11,7 +11,7 @@ import (
 // CommandRoute represents a command route with its pattern and handler
 type CommandRoute struct {
 	pattern string
-	handler func(params map[string]string, payload []byte) error
+	handler func(command string, params map[string]string, payload []byte) error
 }
 
 // CommandHandler handles MQTT command routing and execution
@@ -94,34 +94,34 @@ func (h *CommandHandler) matchRoute(command, pattern string) (map[string]string,
 }
 
 // Individual handler methods
-func (h *CommandHandler) handleMetaInfo(params map[string]string, _ []byte) error {
-	h.executeCommand("PublishMetaInfo", h.protectClient.PublishMetaInfo)
+func (h *CommandHandler) handleMetaInfo(command string, params map[string]string, _ []byte) error {
+	h.executeCommand(command, h.protectClient.PublishMetaInfo)
 	return nil
 }
 
-func (h *CommandHandler) handleCameras(params map[string]string, _ []byte) error {
-	h.executeCommand("PublishCameras", h.protectClient.PublishCameras)
+func (h *CommandHandler) handleCameras(command string, params map[string]string, _ []byte) error {
+	h.executeCommand(command, h.protectClient.PublishCameras)
 	return nil
 }
 
-func (h *CommandHandler) handleCameraSnapshot(params map[string]string, _ []byte) error {
+func (h *CommandHandler) handleCameraSnapshot(command string, params map[string]string, _ []byte) error {
 	cameraID := params["id"]
-	h.executeCommand("PublishCameraSnapshot", func() error {
+	h.executeCommand(command, func() error {
 		return h.protectClient.PublishCameraSnapshot(cameraID)
 	}, cameraID)
 	return nil
 }
 
-func (h *CommandHandler) handleCameraRTSPStream(params map[string]string, _ []byte) error {
+func (h *CommandHandler) handleCameraRTSPStream(command string, params map[string]string, _ []byte) error {
 	cameraID := params["id"]
-	h.executeCommand("PublishCameraRTSPStream", func() error {
+	h.executeCommand(command, func() error {
 		return h.protectClient.PublishCameraRTSPStream(cameraID)
 	}, cameraID)
 	return nil
 }
 
-func (h *CommandHandler) handleNVRs(params map[string]string, _ []byte) error {
-	h.executeCommand("PublishNVRs", h.protectClient.PublishNVRs)
+func (h *CommandHandler) handleNVRs(command string, params map[string]string, _ []byte) error {
+	h.executeCommand(command, h.protectClient.PublishNVRs)
 	return nil
 }
 
@@ -144,7 +144,7 @@ func (h *CommandHandler) HandleCommand(client mqtt.Client, msg mqtt.Message) {
 	// Try to match the command against routes
 	for _, route := range h.routes {
 		if params, matched := h.matchRoute(command, route.pattern); matched {
-			route.handler(params, payload)
+			route.handler(command, params, payload)
 			return
 		}
 	}
