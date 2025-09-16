@@ -129,6 +129,8 @@ func (p *ProtectClient) subscribeToEndpoint(endpoint string) {
 func (p *ProtectClient) connectToEndpoint(url string, endpoint string, headers map[string][]string) {
 	for {
 		select {
+		case <-p.shutdown:
+			return
 		case <-p.interrupt:
 			return
 		default:
@@ -173,6 +175,8 @@ func (p *ProtectClient) connectToEndpoint(url string, endpoint string, headers m
 
 			for {
 				select {
+				case <-p.shutdown:
+					return
 				case <-p.interrupt:
 					return
 				default:
