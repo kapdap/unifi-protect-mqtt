@@ -8,26 +8,18 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gorilla/websocket"
 )
-
-// CommandRoute represents a command route with its pattern and handler
-type CommandRoute struct {
-	pattern string
-	handler func(params map[string]string) error
-}
 
 // ProtectClient wraps the UniFi Protect WebSocket functionality
 type ProtectClient struct {
 	config     *ProtectConfig
 	mqttClient *MQTTClient
-	interrupt  chan os.Signal
 	dialer     websocket.Dialer
 	httpClient *http.Client
+	interrupt  chan os.Signal
 	shutdown   chan struct{}
 }
 
@@ -75,7 +67,6 @@ func (p *ProtectClient) PublishCameras() error {
 
 	// Publish each camera to its individual topic
 	for _, camera := range cameras {
-		// Extract the camera ID
 		id, ok := camera["id"].(string)
 		if !ok {
 			slog.Warn("Camera missing ID field, skipping")
@@ -87,7 +78,6 @@ func (p *ProtectClient) PublishCameras() error {
 			return fmt.Errorf("failed to marshal camera data: %v", err)
 		}
 
-		// Publish to cameras/{id} topic
 		topic := fmt.Sprintf("cameras/%s", id)
 		if err := p.publishResponse(topic, cameraData, true); err != nil {
 			slog.Warn("Failed to publish camera", "id", id, "error", err)
@@ -110,11 +100,6 @@ func (p *ProtectClient) PublishCameraRTSPStream(id string) error {
 // PublishNVRs fetches the NVR endpoint and publishes the data to MQTT
 func (p *ProtectClient) PublishNVRs() error {
 	return p.fetchAndPublish("GET", "nvrs", nil, true)
-}
-
-// SubscribeCommands subscribes to MQTT command topics and handles incoming commands
-func (p *ProtectClient) SubscribeCommands() error {
-	return p.mqttClient.Subscribe("commands/#", p.handleCommand)
 }
 
 // SubscribeEvents establishes WebSocket connection to UniFi Protect events endpoint
@@ -272,119 +257,6 @@ func (p *ProtectClient) publishResponse(endpoint string, data []byte, retain boo
 		return fmt.Errorf("failed to publish %s data to MQTT: %v", endpoint, err)
 	}
 	return nil
-}
-
-// executeCommand executes a command function and logs the result
-func (p *ProtectClient) executeCommand(commandName string, fn func() error, args ...string) {
-	if err := fn(); err != nil {
-		if len(args) > 0 {
-			slog.Error("Failed to execute command", "command", commandName, "target", args[0], "error", err)
-		} else {
-			slog.Error("Failed to execute command", "command", commandName, "error", err)
-		}
-	} else {
-		if len(args) > 0 {
-			slog.Info("Successfully executed command", "command", commandName, "target", args[0])
-		} else {
-			slog.Info("Successfully executed command", "command", commandName)
-		}
-	}
-}
-
-// handleCommand processes incoming MQTT command messages using a router pattern
-func (p *ProtectClient) handleCommand(client mqtt.Client, msg mqtt.Message) {
-	topic := msg.Topic()
-	//payload := msg.Payload()
-
-	slog.Info("Received command", "topic", topic)
-
-	// Extract the command from the topic (remove "commands/" prefix)
-	topicPrefix := fmt.Sprintf("%s/%s/", p.mqttClient.config.TopicPrefix, "commands")
-	command := strings.TrimPrefix(topic, topicPrefix)
-	if command == topic {
-		slog.Warn("Invalid command topic format", "topic", topic)
-		return
-	}
-
-	// Define command routes
-	routes := []CommandRoute{
-		{
-			pattern: "meta/info",
-			handler: func(params map[string]string) error {
-				p.executeCommand("PublishMetaInfo", p.PublishMetaInfo)
-				return nil
-			},
-		},
-		{
-			pattern: "cameras",
-			handler: func(params map[string]string) error {
-				p.executeCommand("PublishCameras", p.PublishCameras)
-				return nil
-			},
-		},
-		{
-			pattern: "cameras/{id}/snapshot",
-			handler: func(params map[string]string) error {
-				cameraID := params["id"]
-				p.executeCommand("PublishCameraSnapshot", func() error {
-					return p.PublishCameraSnapshot(cameraID)
-				}, cameraID)
-				return nil
-			},
-		},
-		{
-			pattern: "cameras/{id}/rtsps-stream",
-			handler: func(params map[string]string) error {
-				cameraID := params["id"]
-				p.executeCommand("PublishCameraRTSPStream", func() error {
-					return p.PublishCameraRTSPStream(cameraID)
-				}, cameraID)
-				return nil
-			},
-		},
-		{
-			pattern: "nvrs",
-			handler: func(params map[string]string) error {
-				p.executeCommand("PublishNVRs", p.PublishNVRs)
-				return nil
-			},
-		},
-	}
-
-	// Try to match the command against routes
-	for _, route := range routes {
-		if params, matched := p.matchRoute(command, route.pattern); matched {
-			route.handler(params)
-			return
-		}
-	}
-
-	slog.Warn("Unknown command", "command", command)
-}
-
-// matchRoute checks if a command matches a route pattern and extracts parameters
-func (p *ProtectClient) matchRoute(command, pattern string) (map[string]string, bool) {
-	commandParts := strings.Split(command, "/")
-	patternParts := strings.Split(pattern, "/")
-
-	if len(commandParts) != len(patternParts) {
-		return nil, false
-	}
-
-	params := make(map[string]string)
-
-	for i, patternPart := range patternParts {
-		if strings.HasPrefix(patternPart, "{") && strings.HasSuffix(patternPart, "}") {
-			// Extract parameter name
-			paramName := patternPart[1 : len(patternPart)-1]
-			params[paramName] = commandParts[i]
-		} else if patternPart != commandParts[i] {
-			// Literal part doesn't match
-			return nil, false
-		}
-	}
-
-	return params, true
 }
 
 // getHeaders returns the HTTP headers needed for WebSocket connections

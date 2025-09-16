@@ -39,11 +39,8 @@ func main() {
 
 	// Define MQTT connection handlers
 	onConnect := func() {
-		// Create and setup ProtectClient when MQTT connects
+		// Create and setup ProtectClient
 		protectClient = NewProtectClient(protectConfig, mqttClient, interrupt)
-
-		// Subscribe to MQTT commands
-		protectClient.SubscribeCommands()
 
 		// Subscribe to Protect events
 		protectClient.SubscribeDevices()
@@ -53,6 +50,12 @@ func main() {
 		protectClient.PublishMetaInfo()
 		protectClient.PublishNVRs()
 		protectClient.PublishCameras()
+
+		// Create and setup CommandHandler
+		commandHandler := NewCommandHandler(protectClient, mqttClient)
+
+		// Subscribe to MQTT commands
+		commandHandler.SubscribeCommands()
 	}
 
 	onDisconnect := func() {
